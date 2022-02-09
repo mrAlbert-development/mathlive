@@ -100,7 +100,7 @@ export function attachButtonHandlers(
   let pressAndHoldTimer;
   on(
     element,
-    'mousedown touchstart:passive',
+    'mousedown touchstart',
     (ev: MouseEvent & TouchEvent & PointerEvent) => {
       if (ev.type !== 'mousedown' || ev.buttons === 1) {
         // The primary button was pressed or the screen was tapped.
@@ -120,6 +120,7 @@ export function attachButtonHandlers(
         pressHoldStart = Date.now();
         // Record the ID of the primary touch point for tracking on touchmove
         if (ev.type === 'touchstart') {
+          ev.preventDefault();
           touchID = ev.changedTouches[0].identifier;
         }
 
@@ -135,18 +136,18 @@ export function attachButtonHandlers(
         const pressAndHoldStartCommand = element.getAttribute(
           'data-command-press-and-hold-start'
         );
-        if (pressAndHoldStartCommand) {
-          pressHoldElement = element;
-          if (pressAndHoldTimer) {
-            clearTimeout(pressAndHoldTimer);
-          }
+        // if (pressAndHoldStartCommand) {
+        //   pressHoldElement = element;
+        //   if (pressAndHoldTimer) {
+        //     clearTimeout(pressAndHoldTimer);
+        //   }
 
-          pressAndHoldTimer = setTimeout(() => {
-            if (element.classList.contains('is-pressed')) {
-              executeCommand(JSON.parse(pressAndHoldStartCommand));
-            }
-          }, 300);
-        }
+        //   pressAndHoldTimer = setTimeout(() => {
+        //     if (element.classList.contains('is-pressed')) {
+        //       executeCommand(JSON.parse(pressAndHoldStartCommand));
+        //     }
+        //   }, 300);
+        // }
       }
     }
   );
