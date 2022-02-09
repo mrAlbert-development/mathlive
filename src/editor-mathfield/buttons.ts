@@ -22,6 +22,8 @@ export type ButtonHandlers = {
  * - an object, with the following keys:
  *    * 'default': command performed on up, with a down + up sequence with no
  *      delay between down and up
+ *    * 'alt', 'shift', 'altshift' keys: command performed on up with
+ *      one of these modifiers pressed
  *    * 'pressed': command performed on 'down'
  *    * 'pressAndHoldStart': command performed after a tap/down followed by a
  * delay (optional)
@@ -94,15 +96,16 @@ export function attachButtonHandlers(
     const pressAndHoldStartCommand = element.getAttribute(
       'data-command-press-and-hold-start'
     );
-    if (pressAndHoldStartCommand) {
-      if (pressAndHoldTimer) clearTimeout(pressAndHoldTimer);
+    // if (pressAndHoldStartCommand) {
+    //   if (pressAndHoldTimer) clearTimeout(pressAndHoldTimer);
 
-      pressAndHoldTimer = setTimeout(() => {
-        if (element.classList.contains('is-pressed')) {
-          element.classList.remove('is-pressed');
-          executeCommand(JSON.parse(pressAndHoldStartCommand));
-        }
-      }, 300);
+      // pressAndHoldTimer = setTimeout(() => {
+      //   if (element.classList.contains('is-pressed')) {
+      //     element.classList.remove('is-pressed');
+      //     executeCommand(JSON.parse(pressAndHoldStartCommand));
+      //   }
+      // }, 300);
+      }
     }
   });
   on(element, 'pointerenter', (ev: PointerEvent) => {
