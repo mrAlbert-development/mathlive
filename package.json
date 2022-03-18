@@ -13,7 +13,7 @@
   },
   "bugs": "https://github.com/arnog/mathlive/issues/",
   "scripts": {
-    "dist": "bash ./scripts/build.sh production; bash ./scripts/test.sh",
+    "dist": "bash ./scripts/build.sh production; bash ./scripts/test.sh"
   },
   "main": "./dist/mathlive.min.js",
   "module": "./dist/mathlive.min.mjs",
