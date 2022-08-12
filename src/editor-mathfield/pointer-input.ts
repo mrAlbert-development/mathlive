@@ -13,6 +13,10 @@ function isTouchEvent(evt: Event): evt is TouchEvent {
   return globalThis.TouchEvent !== undefined && evt instanceof TouchEvent;
 }
 
+function isPointerEvent(evt: Event): evt is PointerEvent {
+  return globalThis.PointerEvent !== undefined && evt instanceof PointerEvent;
+}
+
 export function onPointerDown(
   mathfield: MathfieldPrivate,
   evt: PointerEvent | TouchEvent
@@ -31,8 +35,10 @@ export function onPointerDown(
   // PointerEvent) the touchstart event is sent with event.buttons = 0
   // which for a mouse event would normally be an invalid button.
   // Accept this button 0.
-  if (evt instanceof PointerEvent && evt.buttons !== 1 && evt.buttons !== 0) {
-    return;
+  if (isPointerEvent(evt)) {
+    if (evt instanceof PointerEvent && evt.buttons !== 1 && evt.buttons !== 0) {
+      return;
+    }
   }
 
   let scrollLeft = false;
