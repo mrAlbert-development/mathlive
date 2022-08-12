@@ -35,7 +35,8 @@ export function onPointerDown(
   // PointerEvent) the touchstart event is sent with event.buttons = 0
   // which for a mouse event would normally be an invalid button.
   // Accept this button 0.
-  if (isPointerEvent(evt)) {
+  const pointerEventAvailable = isPointerEvent(evt);
+  if (pointerEventAvailable) {
     if (evt instanceof PointerEvent && evt.buttons !== 1 && evt.buttons !== 0) {
       return;
     }
