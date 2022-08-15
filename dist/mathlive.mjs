@@ -34848,6 +34848,9 @@ let gTapCount = 0;
 function isTouchEvent(evt) {
     return globalThis.TouchEvent !== undefined && evt instanceof TouchEvent;
 }
+function isPointerEvent(evt) {
+    return globalThis.PointerEvent !== undefined && evt instanceof PointerEvent;
+}
 function onPointerDown(mathfield, evt) {
     var _a;
     //Reset the atom bounds cache
@@ -34861,8 +34864,11 @@ function onPointerDown(mathfield, evt) {
     // PointerEvent) the touchstart event is sent with event.buttons = 0
     // which for a mouse event would normally be an invalid button.
     // Accept this button 0.
-    if (evt instanceof PointerEvent && evt.buttons !== 1 && evt.buttons !== 0) {
-        return;
+    const pointerEventAvailable = isPointerEvent(evt);
+    if (pointerEventAvailable) {
+        if (evt instanceof PointerEvent && evt.buttons !== 1 && evt.buttons !== 0) {
+            return;
+        }
     }
     let scrollLeft = false;
     let scrollRight = false;
