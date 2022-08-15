@@ -34854,6 +34854,9 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
   function isTouchEvent(evt) {
       return globalThis.TouchEvent !== undefined && evt instanceof TouchEvent;
   }
+  function isPointerEvent(evt) {
+      return globalThis.PointerEvent !== undefined && evt instanceof PointerEvent;
+  }
   function onPointerDown(mathfield, evt) {
       var _a;
       //Reset the atom bounds cache
@@ -34867,8 +34870,11 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
       // PointerEvent) the touchstart event is sent with event.buttons = 0
       // which for a mouse event would normally be an invalid button.
       // Accept this button 0.
-      if (evt instanceof PointerEvent && evt.buttons !== 1 && evt.buttons !== 0) {
-          return;
+      const pointerEventAvailable = isPointerEvent(evt);
+      if (pointerEventAvailable) {
+          if (evt instanceof PointerEvent && evt.buttons !== 1 && evt.buttons !== 0) {
+              return;
+          }
       }
       let scrollLeft = false;
       let scrollRight = false;
