@@ -34886,7 +34886,7 @@ function onPointerDown(mathfield, evt) {
         }
     }, 32);
     function endPointerTracking(evt) {
-        if (window.PointerEvent) {
+        if (pointerEventAvailable && window.PointerEvent) {
             off(field, 'pointermove', onPointerMove);
             off(field, 'pointerup pointercancel', endPointerTracking);
             if (evt instanceof PointerEvent) {
@@ -35033,7 +35033,7 @@ function onPointerDown(mathfield, evt) {
             }
             else if (!trackingPointer) {
                 trackingPointer = true;
-                if (window.PointerEvent) {
+                if (pointerEventAvailable && window.PointerEvent) {
                     on(field, 'pointermove', onPointerMove);
                     on(field, 'pointerup pointercancel', endPointerTracking);
                     if (evt instanceof PointerEvent) {
