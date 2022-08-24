@@ -341,7 +341,7 @@
   whitesmoke	rgb(245, 245, 245)
   yellow	rgb(255, 255, 0)
   yellowgreen	rgb(154, 205, 50)
-       
+
   */
   /**
    * Return a CSS color (#rrggbb) from a string.
@@ -11476,20 +11476,20 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
           result.captureSelection = true; // Do not let children be selected
           /*
               The \operatorname commands is defined with:
-      
+
               \gdef\newmcodes@{\mathcode`\'39\mathcode`\*42\mathcode`\."613A%
               \ifnum\mathcode`\-=45 \else
                   \mathchardef\std@minus\mathcode`\-\relax
               \fi
               \mathcode`\-45\mathcode`\/47\mathcode`\:"603A\relax}
-      
-      
+
+
               \mathcode assigns to a character its category (2=mbin), its font family (0=cmr),
               and its character code.
-      
+
               It basically temporarily reassigns to ":.'-/*" the values/properties
               these characters have in text mode (but importantly, not to " " (space))
-      
+
               */
           if (result.body) {
               result.body.forEach((x) => {
@@ -12763,7 +12763,7 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
                   first row left aligned, last right aligned, others centered
                   last line has an eqn. counter. multline* will omit the counter
                   no output if inside an equation
-                  
+
 
   'gather'        at most two columns
                   first column centered, second column right aligned
@@ -12928,7 +12928,7 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
   defineTabularEnvironment('split', '', (name, array, rowGaps) => new ArrayAtom(name, array, rowGaps, {
       columns: [{ align: 'r' }, { align: 'l' }],
   }));
-  defineTabularEnvironment(['gather', 'gathered'], '', (name, array, rowGaps) => 
+  defineTabularEnvironment(['gather', 'gathered'], '', (name, array, rowGaps) =>
   // An AMS-Math environment
   // %    The \env{gathered} environment is for several lines that are
   // %    centered independently.
@@ -17166,7 +17166,7 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
         'nnn':                  '\\bigcap',
         'uu':                   '\\cup',
         'uuu':                  '\\bigcup',
-    
+
         // Binary relation symbols
         '-=':                   '\\equiv',
         '~=':                   '\\cong',
@@ -17183,7 +17183,7 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
         'diamond':              '\\diamond',
         'square':               '\\square',
         'iff':                  '\\iff',
-    
+
         'sub':                  '\\subset',
         'sup':                  '\\supset',
         'sube':                 '\\subseteq',
@@ -17197,7 +17197,7 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
         'harr':                 '\\leftrightarrow',
         'hArr':                 '\\Leftrightarrow',
         'aleph':                '\\aleph',
-    
+
         // Logic
         'and':                  '\\land',
         'or':                   '\\lor',
@@ -17206,14 +17206,14 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
         'TT':                   '\\top',
         '|--':                  '\\vdash',
         '|==':                  '\\models',
-        
+
         // Other functions
         '|__':                  '\\lfloor',
         '__|':                  '\\rfloor',
-    
+
         '|~':                   '\\lceil',
         '~|':                   '\\rceil',
-    
+
         // Arrows
         '>->':                   '\\rightarrowtail',
         '->>':                   '\\twoheadrightarrow',
@@ -24684,13 +24684,13 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
       \abc=2
       \par
       inner after $R = $ \the\R ~ ($= 2$ local value)
-      
+
       global R $R = $ \the\global\R ~ ($= 0$ global value)
 
       \global\R=1000
-      
+
       $R = $ \the\R  ~ ($=1000 $ sets global and clear all locals)
-      
+
     }
     \par
     after top $R = $ \the\R ~($= 1000$ local cleared)
@@ -34892,7 +34892,7 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
           }
       }, 32);
       function endPointerTracking(evt) {
-          if (window.PointerEvent) {
+          if (pointerEventAvailable && window.PointerEvent) {
               off(field, 'pointermove', onPointerMove);
               off(field, 'pointerup pointercancel', endPointerTracking);
               if (evt instanceof PointerEvent) {
@@ -35039,7 +35039,7 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
               }
               else if (!trackingPointer) {
                   trackingPointer = true;
-                  if (window.PointerEvent) {
+                  if (pointerEventAvailable && window.PointerEvent) {
                       on(field, 'pointermove', onPointerMove);
                       on(field, 'pointerup pointercancel', endPointerTracking);
                       if (evt instanceof PointerEvent) {
@@ -36518,18 +36518,18 @@ M500 241 v40 H399408 v-40z M500 435 v40 H400000 v-40z`,
          * To create programmatically a new mahfield use:
          * ```javascript
         let mfe = new MathfieldElement();
-    
+
         // Set initial value and options
         mfe.value = "\\frac{\\sin(x)}{\\cos(x)}";
-    
+
         // Options can be set either as an attribute (for simple options)...
         mfe.setAttribute('virtual-keyboard-layout', 'dvorak');
-    
+
         // ... or using `setOptions()`
         mfe.setOptions({
             virtualKeyboardMode: 'manual',
         });
-    
+
         // Attach the element to the DOM
         document.body.appendChild(mfe);
         * ```
