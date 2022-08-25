@@ -57,7 +57,7 @@ export function onPointerDown(
     }
   }, 32);
   function endPointerTracking(evt: null | PointerEvent | TouchEvent): void {
-    if (window.PointerEvent) {
+    if (pointerEventAvailable && window.PointerEvent) {
       off(field, 'pointermove', onPointerMove);
       off(
         field,
@@ -229,7 +229,7 @@ export function onPointerDown(
         }
       } else if (!trackingPointer) {
         trackingPointer = true;
-        if (window.PointerEvent) {
+        if (pointerEventAvailable && window.PointerEvent) {
           on(field, 'pointermove', onPointerMove);
           on(
             field,
