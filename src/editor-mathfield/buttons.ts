@@ -71,7 +71,7 @@ export function attachButtonHandlers(
   }
 
   let pressHoldStart: number;
-  let pressAndHoldTimer;
+  // let pressAndHoldTimer;
 
   on(element, 'pointerdown:passive', (ev: PointerEvent) => {
     if (ev.buttons !== 1) return;
@@ -93,20 +93,20 @@ export function attachButtonHandlers(
 
     // If there is a `press and hold start` command, perform it
     // after a delay, if we're still pressed by then.
-    const pressAndHoldStartCommand = element.getAttribute(
-      'data-command-press-and-hold-start'
-    );
+    // const pressAndHoldStartCommand = element.getAttribute(
+    //   'data-command-press-and-hold-start'
+    // );
     // if (pressAndHoldStartCommand) {
     //   if (pressAndHoldTimer) clearTimeout(pressAndHoldTimer);
 
-      // pressAndHoldTimer = setTimeout(() => {
-      //   if (element.classList.contains('is-pressed')) {
-      //     element.classList.remove('is-pressed');
-      //     executeCommand(JSON.parse(pressAndHoldStartCommand));
-      //   }
-      // }, 300);
-      }
-    }
+    // pressAndHoldTimer = setTimeout(() => {
+    //   if (element.classList.contains('is-pressed')) {
+    //     element.classList.remove('is-pressed');
+    //     executeCommand(JSON.parse(pressAndHoldStartCommand));
+    //   }
+    // }, 300);
+    // }
+    // }
   });
   on(element, 'pointerenter', (ev: PointerEvent) => {
     const target = ev.target! as Element;
