@@ -25,10 +25,6 @@
   },
   "main": "./dist/mathlive.min.js",
   "module": "./dist/mathlive.min.mjs",
-  "exports": {
-    "import": "./dist/mathlive.min.mjs",
-    "require": "./dist/mathlive.min.js"
-  },
   "types": "./dist/public/mathlive.d.ts",
   "files": [
     "/dist"
