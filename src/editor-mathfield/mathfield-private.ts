@@ -1428,7 +1428,7 @@ export class MathfieldPrivate implements GlobalContext, Mathfield {
     // Adjust mode
     {
       const cursor = model.at(model.position);
-      const newMode = cursor.mode ?? effectiveMode(this.options);
+      const newMode = effectiveMode(this.options) ?? cursor.mode;
       if (this.mode !== newMode) {
         if (this.mode === 'latex') {
           complete(this, 'accept', { mode: newMode });
