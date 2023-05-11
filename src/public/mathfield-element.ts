@@ -866,9 +866,8 @@ import 'https://unpkg.com/@cortex-js/compute-engine?module';
    *  @category Options
    */
   setOptions(options: Partial<MathfieldOptions>): void {
-    if (this._mathfield) {
-      this._mathfield.setOptions(options);
-    } else if (gDeferredState.has(this)) {
+    if (this._mathfield) this._mathfield.setOptions(options);
+    else if (gDeferredState.has(this)) {
       const mergedOptions = {
         ...gDeferredState.get(this)!.options,
         ...options,

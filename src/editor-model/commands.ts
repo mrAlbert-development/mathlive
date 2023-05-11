@@ -412,9 +412,7 @@ export function move(
     //
     // 2. Handle out of bounds
     //
-    if (pos < 0 || pos > model.lastOffset) {
-      return handleDeadEnd();
-    }
+    if (pos < 0 || pos > model.lastOffset) return handleDeadEnd();
 
     //
     // 3. Handle placeholder
@@ -563,9 +561,7 @@ function moveUpward(
     if (!branchHasPrompt && model.mathfield.prompting) return handleDeadEnd();
 
     moveToClosestAtomVertically(model, baseAtom, branch, extend, 'up');
-  } else {
-    return handleDeadEnd();
-  }
+  } else return handleDeadEnd();
 
   return true;
 }
@@ -635,9 +631,7 @@ function moveDownward(
     );
     if (!branchHasPrompt && model.mathfield.prompting) return handleDeadEnd();
     moveToClosestAtomVertically(model, baseAtom, branch, extend, 'down');
-  } else {
-    return handleDeadEnd();
-  }
+  } else return handleDeadEnd();
 
   return true;
 }
