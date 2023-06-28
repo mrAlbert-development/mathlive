@@ -1,16 +1,22 @@
-/* 0.69.9 */import { ErrorListener, MacroDictionary, ParseMode, ParserErrorCode, MathfieldErrorCode, Registers } from './core';
+/* 0.89.4 */import { MacroDictionary, ParseMode, Registers } from './core';
 import type { Mathfield, Range } from './mathfield';
+import { VirtualKeyboardMode } from './mathfield-element';
 import type { Selector } from './commands';
-import type { ErrorCode as MathJsonErrorCode } from '@cortex-js/compute-engine/dist/math-json.min.esm.js';
 /**
- * Specify behaviour for origin validation.
+ * Specify behavior for origin validation.
+ *
+ * <div class='symbols-table' style='--first-col-width:32ex'>
+ *
  * | Value | Description |
  * | ----- | ----------- |
- * | `'same-origin'` | The origin of received message must be the same of hosted window, instead exception will thow. |
- * | `'(origin: string) => boolean` | The callback to verify origin to be expected validation. When callback return `false` value, message will rejected and exception will throw. |
- * | `'none'` | No origin validation for post messages. |
+ * | `"same-origin"` | The origin of received message must be the same of hosted window, instead exception will throw. |
+ * | `(origin: string) => boolean` | The callback to verify origin to be expected validation. When callback return `false` value, message will rejected and exception will throw. |
+ * | `"none"` | No origin validation for post messages. |
+ *
+ * </div>
+ *
  */
-export declare type OriginValidator = ((origin: string) => boolean) | 'same-origin' | 'none';
+export type OriginValidator = ((origin: string) => boolean) | 'same-origin' | 'none';
 /**
  * A keybinding associates a combination of physical keyboard keys with a
  * command.
@@ -30,7 +36,7 @@ export declare type OriginValidator = ((origin: string) => boolean) | 'same-orig
  * ```
  *
  */
-export declare type Keybinding = {
+export type Keybinding = {
     /**
      * The pressed keys that will trigger this keybinding.
      *
@@ -95,14 +101,10 @@ export declare type Keybinding = {
      * a key code should be used instead: `alt+[Digit2]`. This will correspond
      * to a key combination that can be generated on any keyboard.
      *
-     * If a keybinding is invalid (impossible to produce or ambiguous) with the current
-     * keyboard layout, an error will be generated, and the `onError` listener
-     * will be called with a `invalid-keybinding` error code.
-     *
      */
     key: string;
     /** The command is a single selector, or a selector with arguments */
-    command: Selector | [Selector, ...any[]];
+    command: Selector | string[] | [string, any] | [string, any, any] | [string, any, any, any];
     /**
      * If specified, this indicates in which mode this keybinding will apply.
      * If none is specified, the keybinding will apply in every mode.
@@ -127,53 +129,47 @@ export declare type Keybinding = {
  *     config.inlineShortcuts = {
  *      half: '\\frac{1}{2}',
  *      in: {
- *          mode: 'math',
  *          after: 'space+letter+digit+symbol+fence',
  *          value: '\\in',
  *      },
  *  };
  *```
  *
- * When using a string, the shortcut will apply in any mode, and regardless
- * of the characters surrounding it.
+ * When using a string, the shortcut applies regardless of the characters
+ * surrounding it.
  *
  * When using an object literal the `value` key is required an indicate the
  * shortcut substitution.
  *
- * The `mode` key, if present, indicate which mode this shortcut will
- * apply in, either `'math'` or `'text'`. If the key is not present the
- * shortcut apply in all modes.
- *
- * The `'after'` key, if present, indicate in what context (surrounding characters)
+ * The `"after"` key, if present, indicate in what context (preceding characters)
  * the shortcut will apply. One or more values can be specified, separated by a '|'
- * character. If any of the values match, the shortcut will be applicable.
+ * character. If any of the values match, the shortcut is applicable.
  *
  *
  * Possible values are:
  *
  *  | | |
  *  | :----- | :----- |
- *  | `'space'` |  A spacing command, such as `\quad` |
- *  | `'nothing'`|  The begining of a group |
- *  | `'surd'` |A square root or n-th root |
- *  | `'frac'` |A fraction|
- *  | `'function'` |A function such as `\sin` or `f`|
- *  | `'letter'` |A letter, such as `x` or `n`|
- *  | `'digit'` |`0` through `9`|
- *  | `'binop'` |A binary operator, such as `+`|
- *  | `'relop'` |A relational operator, such as `=`|
- *  | `'punct'` |A punctuation mark, such as `,`|
- *  | `'array'` |An array, such as a matrix or cases statement|
- *  | `'openfence'` |An opening fence, such as `(`|
- *  | `'closefence'` | A closing fence such as `}`|
- *  | `'text'`| Some plain text|
+ *  | `"space"` |  A spacing command, such as `\quad` |
+ *  | `"nothing"`|  The begining of a group |
+ *  | `"surd"` | A square root or n-th root |
+ *  | `"frac"` | A fraction|
+ *  | `"function"` |A  function such as `\sin` or `f`|
+ *  | `"letter"` | A letter, such as `x` or `n`|
+ *  | `"digit"` |`0` through `9`|
+ *  | `"binop"` | A binary operator, such as `+`|
+ *  | `"relop"` | A relational operator, such as `=`|
+ *  | `"punct"` | A punctuation mark, such as `,`|
+ *  | `"array"` | An array, such as a matrix or cases statement|
+ *  | `"openfence"` | An opening fence, such as `(`|
+ *  | `"closefence"` | A closing fence such as `}`|
+ *  | `"text"`| Some plain text|
  */
-export declare type InlineShortcutDefinition = string | {
+export type InlineShortcutDefinition = string | {
     value: string;
-    mode?: ParseMode;
     after?: string;
 };
-export declare type TextToSpeechOptions = {
+export type TextToSpeechOptions = {
     /**
      * Specify which set of text to speech rules to use.
      *
@@ -252,14 +248,14 @@ export interface VirtualKeyboardKeycap {
     /**
      * Command to perform when the keycap is pressed
      */
-    command: Selector | [Selector, ...any[]];
+    command: Selector | string[] | [string, any] | [string, any, any] | [string, any, any, any];
     /**
-     * Latex fragment to insert when the keycap is pressed
+     * LaTeX fragment to insert when the keycap is pressed
      * (ignored if command is specified)
      */
     insert: string;
     /**
-     * Label of the key as a Latex expression, also the Latex
+     * Label of the key as a LaTeX expression, also the LaTeX
      * inserted if no `command` or `insert` property is specified.
      */
     latex: string;
@@ -316,6 +312,8 @@ export interface VirtualKeyboardKeycap {
      * Command to perform when the shifted key is pressed
      */
     shiftedCommand: Selector | [Selector, ...any[]];
+    /** Name of the layer to shift to when the key is pressed */
+    layer: string;
 }
 export interface VirtualKeyboardDefinition {
     label: string;
@@ -335,12 +333,12 @@ export interface VirtualKeyboardLayer {
     /** The rows of keycaps in this layer */
     rows: Partial<VirtualKeyboardKeycap>[][];
 }
-export declare type VirtualKeyboardToolbarOptions = 'none' | 'default';
-export declare type VirtualKeyboardOptions = {
+export type VirtualKeyboardToolbarOptions = 'none' | 'default';
+export type VirtualKeyboardOptions = {
     /**
      * A space separated list of the keyboards that should be available. The
-     * keyboard `'all'` is synonym with `'numeric'`, `'functions'``, `'symbols'``
-     * `'roman'` and `'greek'`,
+     * keyboard `"all"` is synonym with `"numeric"`, `"functions"``, `"symbols"``
+     * `"roman"` and `"greek"`,
      *
      * The keyboards will be displayed in the order indicated.
      */
@@ -377,25 +375,24 @@ export declare type VirtualKeyboardOptions = {
      * When a key on the virtual keyboard is pressed, produce a short audio
      * feedback.
      *
-     * If the property is set to a `string` or `HTMLAudioElement`, the same
-     * sound is played in all cases. Otherwise, a distinct sound is played:
+     * If the property is set to a `string`, the same sound is played in all
+     * cases. Otherwise, a distinct sound is played:
      *
      * -   `delete` a sound played when the delete key is pressed
      * -   `return` ... when the return/tab key is pressed
      * -   `spacebar` ... when the spacebar is pressed
-     * -   `default` ... when any other key is pressed. This key is required,
+     * -   `default` ... when any other key is pressed. This property is required,
      *     the others are optional. If they are missing, this sound is played as
      *     well.
      *
      * The value of the properties should be either a string, the name of an
-     * audio file in the `soundsDirectory` directory, an `HTMLAudioElement` or
-     * null to supress the sound.
+     * audio file in the `soundsDirectory` directory or `null` to suppress the sound.
      */
-    keypressSound: string | HTMLAudioElement | null | {
-        spacebar?: null | string | HTMLAudioElement;
-        return?: null | string | HTMLAudioElement;
-        delete?: null | string | HTMLAudioElement;
-        default: null | string | HTMLAudioElement;
+    keypressSound: string | null | {
+        spacebar?: null | string;
+        return?: null | string;
+        delete?: null | string;
+        default: null | string;
     };
     /**
      * Sound played to provide feedback when a command has no effect, for example
@@ -403,10 +400,9 @@ export declare type VirtualKeyboardOptions = {
      *
      * The property is either:
      * - a string, the name of an audio file in the `soundsDirectory` directory
-     * - an `HTMLAudioElement`
      * - null to turn off the sound
      */
-    plonkSound: string | HTMLAudioElement | null;
+    plonkSound: string | null;
     /**
      * The right hand side toolbar configuration.
      *
@@ -420,19 +416,19 @@ export declare type VirtualKeyboardOptions = {
      */
     virtualKeyboardToggleGlyph: string;
     /**
-     * -   `'manual'`: pressing the virtual keyboard toggle button will show or hide
+     * -   `"manual"`: pressing the virtual keyboard toggle button will show or hide
      *     the virtual keyboard. If hidden, the virtual keyboard is not shown when
      *     the field is focused until the toggle button is pressed.
-     * -   `'onfocus'`: the virtual keyboard will be displayed whenever the field is
+     * -   `"onfocus"`: the virtual keyboard will be displayed whenever the field is
      *     focused and hidden when the field loses focus. In that case, the virtual
      *     keyboard toggle button is not displayed.
-     * -   `'off'`: the virtual keyboard toggle button is not displayed, and the
+     * -   `"off"`: the virtual keyboard toggle button is not displayed, and the
      *     virtual keyboard is never triggered.
-     * -   '`auto'`:  `'onfocus'` on touch-capable devices and `'off'` otherwise
+     * -   '`auto'`:  `"onfocus"` on touch-capable devices and `"off"` otherwise
      *    (**default**).
      *
      */
-    virtualKeyboardMode: 'auto' | 'manual' | 'onfocus' | 'off';
+    virtualKeyboardMode: VirtualKeyboardMode;
     /**
      * Element the virtual keyboard element gets appended to. The `position`
      * attribute of this element should be `relative` so that the virtual keyboard
@@ -454,46 +450,15 @@ export declare type VirtualKeyboardOptions = {
  */
 export interface MathfieldHooks {
     /**
-     * A hook invoked when a keystroke is about to be processed.
+     * A hook invoked when a string of characters that could be
+     * interpreted as shortcut has been typed.
      *
-     * -   <var>keystroke</var>: a string describing the keystroke
-     * -   <var>ev</var>: the native keyboard event
+     * If not a special shortcut, return the empty string `""`.
      *
-     * Return `false` to stop the handling of the event.
-     *
-     * @deprecated Use corresponding events of `MathfieldEvent` instead
-     *
+     * Use this handler to detect multi character symbols, and return them wrapped appropriately,
+     * for example `\mathrm{${symbol}}`.
      */
-    onKeystroke: (sender: Mathfield, keystroke: string, ev?: KeyboardEvent) => boolean;
-    /**
-     * A hook invoked when keyboard navigation would cause the insertion
-     * point to leave the mathfield.
-     *
-     * - <var>direction</var> indicates the direction of the navigation, either
-     * `"forward"` or `"backward"` or `"upward"` or `"downward"`.
-     *
-     * Return `false` if the move has been handled by the hook.
-     *
-     * Return `true` for the default behavior, which is playing a "plonk" sound.
-     *
-     * @deprecated Use corresponding events of `MathfieldEvent` instead
-     *
-     */
-    onMoveOutOf: (sender: Mathfield, direction: 'forward' | 'backward' | 'upward' | 'downward') => boolean;
-    /**
-     * This hook is invoked when pressing tab (or shift-tab) would cause the
-     * insertion point to leave the mathfield.
-     *
-     * <var>direction</var> indicates the direction of the navigation.
-     *
-     * By default, the insertion point jumps to the next/previous focussable
-     * element.
-     *
-     * @deprecated Use corresponding events of `MathfieldEvent` instead
-     *
-     *
-     */
-    onTabOutOf: (sender: Mathfield, direction: 'forward' | 'backward') => boolean;
+    onInlineShortcut: (sender: Mathfield, symbol: string) => string;
     /**
      * This hooks is invoked when the user has requested to export the content
      * of the mathfield, for example when pressing ctrl/command+C.
@@ -502,68 +467,47 @@ export interface MathfieldHooks {
      *
      * The `range` argument indicates which portion of the mathfield should be
      * exported. It is not always equal to the current selection, but it can
-     * be used to export a format other than Latex.
+     * be used to export a format other than LaTeX.
      *
      * By default this is:
      *
-     * ```
+     * ```js
      *  return `\\begin{equation*}${latex}\\end{equation*}`;
      * ```
      *
      */
     onExport: (from: Mathfield, latex: string, range: Range) => string;
 }
-export declare type RemoteVirtualKeyboardOptions = CoreOptions & VirtualKeyboardOptions & {
+export type VirtualKeyboardTheme = 'apple' | 'material' | '';
+export type CombinedVirtualKeyboardOptions = Omit<VirtualKeyboardOptions, 'virtualKeyboardToggleGlyph' | 'virtualKeyboardMode'> & CoreOptions;
+export type RemoteVirtualKeyboardOptions = CombinedVirtualKeyboardOptions & {
     /**
      * Specify the `targetOrigin` parameter for [postMessage](https://developer.mozilla.org/en/docs/Web/API/Window/postMessage)
      * to send control messages from parent to child frame to remote control of
      * mathfield component.
      *
-     * **Default**: `window.origin`
+     * **Default**: `globalThis.origin`
      */
     targetOrigin: string;
     /**
-     * Specify behaviour how origin of message from [postMessage](https://developer.mozilla.org/en/docs/Web/API/Window/postMessage)
+     * Specify behavior how origin of message from [postMessage](https://developer.mozilla.org/en/docs/Web/API/Window/postMessage)
      * should be validated.
      *
-     * **Default**: `'same-origin'`
+     * **Default**: `"same-origin"`
      */
     originValidator: OriginValidator;
 };
-export declare type UndoStateChangeListener = (target: Mathfield, action: 'undo' | 'redo' | 'snapshot') => void;
-/**
- * The methods provide a notification that an event is about to occur or has
- * occured.
- *
- * In general instead of using this interface you should be listening to the
- * corresponding event on `MathfieldElement`, i.e.
- * ```javascript
-mfe.addEventListener('input', (ev) => {
-    console.log(ev.target.value);
-});
- * ```
- * @deprecated Use corresponding events of `MathfieldEvent` instead
- */
-export interface MathfieldListeners {
-    /** The mathfield has lost keyboard focus */
-    onBlur: (sender: Mathfield) => void;
-    /** The mathfield has gained keyboard focus */
-    onFocus: (sender: Mathfield) => void;
-    onContentWillChange: (sender: Mathfield) => void;
-    onContentDidChange: (sender: Mathfield) => void;
-    onSelectionWillChange: (sender: Mathfield) => void;
-    onSelectionDidChange: (sender: Mathfield) => void;
-    onUndoStateWillChange: UndoStateChangeListener;
-    onUndoStateDidChange: UndoStateChangeListener;
-    onCommit: (sender: Mathfield) => void;
-    onModeChange: (sender: Mathfield, mode: ParseMode) => void;
-    onReadAloudStatus: (sender: Mathfield) => void;
-    onPlaceholderDidChange: (sender: Mathfield, placeholderId: string) => void;
-}
-export declare type KeyboardOptions = {
+export type ContentChangeType = 'insertText' | 'insertLineBreak' | 'insertFromPaste' | 'historyUndo' | 'historyRedo' | 'deleteByCut' | 'deleteContent' | 'deleteContentBackward' | 'deleteContentForward' | 'deleteWordBackward' | 'deleteWordForward' | 'deleteSoftLineBackward' | 'deleteSoftLineForward' | 'deleteHardLineBackward' | 'deleteHardLineForward';
+export type ContentChangeOptions = {
+    data?: string | null;
+    dataTransfer?: DataTransfer | null;
+    inputType?: ContentChangeType;
+    isComposing?: boolean;
+};
+export type KeyboardOptions = {
     keybindings: Keybinding[];
 };
-export declare type InlineShortcutsOptions = {
+export type InlineShortcutsOptions = {
     /**
      * The keys of this object literal indicate the sequence of characters
      * that will trigger an inline shortcut.
@@ -595,7 +539,7 @@ export declare type InlineShortcutsOptions = {
      */
     inlineShortcutTimeout: number;
 };
-export declare type LocalizationOptions = {
+export type LocalizationOptions = {
     /**
      * The locale (language + region) to use for string localization.
      *
@@ -622,11 +566,15 @@ export declare type LocalizationOptions = {
   */
     strings: Record<string, Record<string, string>>;
 };
-export declare type EditingOptions = {
-    /** When true, the user cannot edit the mathfield. */
+export type EditingOptions = {
+    /** When `true`, the user cannot edit the mathfield. The mathfield can still
+     * be modified programatically.
+     *
+     * **Default**: `false`
+     */
     readOnly: boolean;
     /**
-     * When true, during text input the field will switch automatically between
+     * When `true`, during text input the field will switch automatically between
      * 'math' and 'text' mode depending on what is typed and the context of the
      * formula. If necessary, what was previously typed will be 'fixed' to
      * account for the new info.
@@ -635,13 +583,13 @@ export declare type EditingOptions = {
      *
      * | Type  | Interpretation |
      * |---:|:---|
-     * | "i" | math mode, imaginary unit |
-     * | "if" | text mode, english word "if" |
-     * | "if x" | all in text mode, maybe the next word is xylophone? |
-     * | "if x >" | "if" stays in text mode, but now "x >" is in math mode |
-     * | "if x > 0" | "if" in text mode, "x > 0" in math mode |
+     * | `i` | math mode, imaginary unit |
+     * | `if` | text mode, english word "if" |
+     * | `if x` | all in text mode, maybe the next word is xylophone? |
+     * | `if x >` | "if" stays in text mode, but now "x >" is in math mode |
+     * | `if x > 0` | "if" in text mode, "x > 0" in math mode |
      *
-     * Smart Mode is off by default.
+     * **Default**: `false`
      *
      * Manually switching mode (by typing `alt/option+=`) will temporarily turn
      * off smart mode.
@@ -649,16 +597,16 @@ export declare type EditingOptions = {
      *
      * **Examples**
      *
-     * -   slope = rise/run
-     * -   If x > 0, then f(x) = sin(x)
-     * -   x^2 + sin (x) when x > 0
-     * -   When x<0, x^{2n+1}<0
-     * -   Graph x^2 -x+3 =0 for 0<=x<=5
-     * -   Divide by x-3 and then add x^2-1 to both sides
-     * -   Given g(x) = 4x – 3, when does g(x)=0?
-     * -   Let D be the set {(x,y)|0<=x<=1 and 0<=y<=x}
-     * -   \int\_{the unit square} f(x,y) dx dy
-     * -   For all n in NN
+     * - `slope = rise/run`
+     * - `If x > 0, then f(x) = sin(x)`
+     * - `x^2 + sin (x) when x > 0`
+     * - `When x<0, x^{2n+1}<0`
+     * - `Graph x^2 -x+3 =0 for 0<=x<=5`
+     * - `Divide by x-3 and then add x^2-1 to both sides`
+     * - `Given g(x) = 4x – 3, when does g(x)=0?`
+     * - `Let D be the set {(x,y)|0<=x<=1 and 0<=y<=x}`
+     * - `\int\_{the unit square} f(x,y) dx dy`
+     * - `For all n in NN`
      *
      */
     smartMode: boolean;
@@ -671,7 +619,7 @@ export declare type EditingOptions = {
      */
     smartFence: boolean;
     /**
-     * When `true`, when a digit is entered in an empty superscript, the cursor
+     * When `true` and a digit is entered in an empty superscript, the cursor
      * leaps automatically out of the superscript. This makes entry of common
      * polynomials easier and faster. If entering other characters (for example
      * "n+1") the navigation out of the superscript must be done manually (by
@@ -702,21 +650,73 @@ export declare type EditingOptions = {
     /**
      * If `true`, extra parentheses around a numerator or denominator are
      * removed automatically.
+     *
+     * **Default**: `true`
      */
     removeExtraneousParentheses: boolean;
     /**
-     * The Latex string to insert when the spacebar is pressed (on the physical or
-     * virtual keyboard). Empty by default. Use `\;` for a thick space, `\:` for
-     * a medium space, `\,` for a thin space.
+     * The LaTeX string to insert when the spacebar is pressed (on the physical or
+     * virtual keyboard).
+     *
+     * Use `"\;"` for a thick space, `"\:"` for a medium space, `"\,"` for a thin space.
+     *
+     * Do not use `" "` (a regular space), as whitespace is skipped by LaTeX so this
+     * will do nothing.
+     *
+     * **Default**: `""` (empty string)
      */
     mathModeSpace: string;
+    /**
+     * The symbol used to separate the integer part from the fractional part of a
+     * number.
+     *
+     * When `","` is used, the corresponding LaTeX string is `{,}`, in order
+     * to ensure proper spacing (otherwise an extra gap is displayed after the
+     * comma).
+     *
+     * This affects:
+     * - what happens when the `,` key is pressed (if `decimalSeparator` is
+     * `","`, the `{,}` LaTeX string is inserted when following some digits)
+     * - the label and behavior of the "." key in the default virtual keyboard
+     *
+     * **Default**: `"."`
+     */
+    decimalSeparator: ',' | '.';
+    /**
+     * When navigation a fraction with the keyboard, the order in which the
+     * numerator and navigator are traversed:
+     * - "numerator-denominator": first the elements in the numerator, then
+     *   the elements in the denominator
+     * - "denominator-numerator": first the elements in the denominator, then
+     *   the elements in the numerator. In some East-Asian cultures, fractions
+     *   are read and written denominator first ("fēnzhī"). Using this
+     *   option allows the keyboard navigation to follow this convention.
+     *
+     * **Default**: `"numerator-denominator"`
+     */
+    fractionNavigationOrder: 'numerator-denominator' | 'denominator-numerator';
+    /**
+     * The symbol used to represent a placeholder in an expression.
+     *
+     * **Default**: `▢` `U+25A2 WHITE SQUARE WITH ROUNDED CORNERS`
+     */
+    placeholderSymbol: string;
+    /**
+     * If `true` a popover with suggestions may be displayed when a LaTeX
+     * command is input.
+     *
+     * **Default**: `true`
+     */
+    enablePopover: boolean;
+    /** If true, math field becomes read only except inside \prompt{} regions*/
+    promptMode: boolean;
 };
-export declare type LayoutOptions = {
+export type LayoutOptions = {
     /**
      * The mode of the element when it is empty:
-     * - `'math'`: equivalent to `\displaystyle` (display math mode)
-     * - `'inline-math'`: equivalent to `\inlinestyle` (inline math mode)
-     * - `'text'`: text mode
+     * - `"math"`: equivalent to `\displaystyle` (display math mode)
+     * - `"inline-math"`: equivalent to `\inlinestyle` (inline math mode)
+     * - `"text"`: text mode
      */
     defaultMode: 'inline-math' | 'math' | 'text';
     /**
@@ -809,7 +809,142 @@ export declare type LayoutOptions = {
       */
     letterShapeStyle: 'auto' | 'tex' | 'iso' | 'french' | 'upright';
 };
-export declare type CoreOptions = {
+export type CoreOptions = {
+    /**
+     * A URL fragment pointing to the directory containing the fonts
+     * necessary to render a formula.
+     *
+     * These fonts are available in the `/dist/fonts` directory of the SDK.
+     *
+     * Customize this value to reflect where you have copied these fonts,
+     * or to use the CDN version.
+     *
+     * The default value is './fonts'. Use `null` to prevent
+     * any fonts from being loaded.
+     *
+     * Changing this setting after the mathfield has been created will have
+     * no effect.
+     *
+     * ```javascript
+     * {
+     *      // Use the CDN version
+     *      fontsDirectory: ''
+     * }
+     * ```
+     * ```javascript
+     * {
+     *      // Use a directory called 'fonts', located next to the
+     *      // `mathlive.js` (or `mathlive.mjs`) file.
+     *      fontsDirectory: './fonts'
+     * }
+     * ```
+     * ```javascript
+     * {
+     *      // Use a directory located at the top your website
+     *      fontsDirectory: 'https://example.com/fonts'
+     * }
+     * ```
+     *
+     */
+    fontsDirectory: string | null;
+    /**
+     * A URL fragment pointing to the directory containing the optional
+     * sounds used to provide feedback while typing.
+     *
+     * Some default sounds are available in the `/dist/sounds` directory of the SDK.
+     *
+     * Use `null` to prevent any sound from being loaded.
+     *
+     */
+    soundsDirectory: string | null;
+    /**
+     * A custom compute engine instance. If none is provided, a default one is
+     * used. If `null` is specified, no compute engine is used.
+     */
+    computeEngine: any | null;
+    /**
+     * Support for [Trusted Type](https://w3c.github.io/webappsec-trusted-types/dist/spec/).
+     *
+     * This optional function will be called before a string of HTML is
+     * injected in the DOM, allowing that string to be sanitized
+     * according to a policy defined by the host.
+     */
+    createHTML: (html: string) => any;
+};
+/**
+ * @keywords security, trust, sanitize, errors
+ */
+export type MathfieldOptions = LayoutOptions & EditingOptions & LocalizationOptions & InlineShortcutsOptions & KeyboardOptions & VirtualKeyboardOptions & TextToSpeechOptions & CoreOptions & MathfieldHooks & {
+    /**
+     * When `true`, use a shared virtual keyboard for all the mathfield
+     * elements in the page, even across _iframes_.
+     *
+     * When setting this option to `true`, you must create the shared
+     * virtual keyboard in the the parent document. You should call
+     * `makeSharedVirtualKeyboard()` before changing the options of any
+     * mathfield or adding new mathfield elements to the DOM.
+     *
+     * ```javascript
+     * import { makeSharedVirtualKeyboard } from 'mathlive';
+     *
+     * makeSharedVirtualKeyboard();
+     * ```
+     *
+     * **Default**: `false`
+     */
+    useSharedVirtualKeyboard: boolean;
+    /**
+     * Specify the `targetOrigin` parameter for
+     * [postMessage](https://developer.mozilla.org/en/docs/Web/API/Window/postMessage)
+     * to send control messages from child to parent frame to remote control
+     * of mathfield component.
+     *
+     * **Default**: `globalThis.origin`
+     */
+    sharedVirtualKeyboardTargetOrigin: string;
+    /**
+     * Specify behavior how origin of message from [postMessage](https://developer.mozilla.org/en/docs/Web/API/Window/postMessage)
+     * should be validated.
+     *
+     * **Default**: `"same-origin"`
+     */
+    originValidator: OriginValidator;
+};
+/**
+ * See [[`setKeyboardLayout`]].
+ *
+ *  | Name | Platform | Display name |
+ *  | :----- | :----- | :----- |
+ *  | `"apple.en-intl"`         |  Apple    | English (International) |
+ *  | `"apple.french"`          |  Apple    | French (AZERTY) |
+ *  | `"apple.german"`          |  Apple    | German (QWERTZ) |
+ *  | `"dvorak"`                |           | English (Dvorak) |
+ *  | `"windows.en-intl"`       |  Windows  | English (International) |
+ *  | `"windows.french"`        |  Windows  | French (AZERTY) |
+ *  | `"windows.german"`        |  Windows  | German (QWERTZ) |
+ *  | `"linux.en"`              |  Linux    | English |
+ *  | `"linux.french"`          |  Linux    | French (AZERTY) |
+ *  | `"linux.german"`          |  Linux    | German (QWERTZ) |
+ */
+export type KeyboardLayoutName = 'apple.en-intl' | 'apple.french' | 'apple.german' | 'apple.spanish' | 'dvorak' | 'windows.en-intl' | 'windows.french' | 'windows.german' | 'windows.spanish' | 'linux.en' | 'linux.french' | 'linux.german' | 'linux.spanish';
+/**
+ * Change the current physical keyboard layout.
+ *
+ * Note that this affects some keybindings, but not general text input.
+ *
+ * If set to `auto` the keyboard layout is guessed.
+ *
+ */
+export declare function setKeyboardLayout(name: KeyboardLayoutName | 'auto'): void;
+/**
+ * Change the current physical keyboard layout to a layout that matches the
+ * specified locale, if one is available.
+ *
+ * Note that this affects some keybindings, but not general text input.
+ *
+ */
+export declare function setKeyboardLayoutLocale(locale: string): void;
+export type AutoRenderOptions = Partial<TextToSpeechOptions> & {
     /**
      * A URL fragment pointing to the directory containing the fonts
      * necessary to render a formula.
@@ -844,107 +979,95 @@ export declare type CoreOptions = {
      * }
      * ```
      *
+     * Setting this value to `null` will prevent the fonts from being loaded.
      */
-    fontsDirectory: string;
-    /**
-     * A URL fragment pointing to the directory containing the optional
-     * sounds used to provide feedback while typing.
-     *
-     * Some default sounds are available in the `/dist/sounds` directory of the SDK.
-     */
-    soundsDirectory: string;
+    fontsDirectory?: string | null;
     /**
      * Support for [Trusted Type](https://w3c.github.io/webappsec-trusted-types/dist/spec/).
      *
-     * This optional function will be called before a string of HTML is
-     * injected in the DOM, allowing that string to be sanitized
+     * This optional function will be called whenever the DOM is modified
+     * by injecting a string of HTML, allowing that string to be sanitized
      * according to a policy defined by the host.
      */
-    createHTML: (html: string) => any;
-};
-/**
- * @keywords security, trust, sanitize, errors
- */
-export declare type MathfieldOptions = LayoutOptions & EditingOptions & LocalizationOptions & InlineShortcutsOptions & KeyboardOptions & VirtualKeyboardOptions & TextToSpeechOptions & CoreOptions & MathfieldHooks & MathfieldListeners & {
+    createHTML?: (html: string) => string;
+    /** An array of tag names whose content will
+     *  not be scanned for delimiters (unless their class matches the `processClass`
+     * pattern below.
+     *
+     * **Default:** `['math-field', 'noscript', 'style', 'textarea', 'pre', 'code', 'annotation', 'annotation-xml']`
+     */
+    skipTags?: string[];
     /**
-     * When true, use a shared virtual keyboard for all the mathfield
-     * elements in the page, even across iframes.
+     * A string used as a regular expression of class names of elements whose content will not be
+     * scanned for delimiter
      *
-     * When setting this option to true, you must create the shared
-     * virtual keyboard in the the parent document:
+     * **Default**: `"tex2jax_ignore"`
+     */
+    ignoreClass?: string;
+    /**
+     * A string used as a
+     * regular expression of class names of elements whose content **will** be
+     * scanned for delimiters,  even if their tag name or parent class name would
+     * have prevented them from doing so.
      *
-     * ```javascript
-     * import { makeSharedVirtualKeyboard } from 'mathlive';
+     * **Default**: `"tex2jax_process"`
      *
-     *     makeSharedVirtualKeyboard({
-     *         virtualKeyboardToolbar: 'none',
-     *     });
-     * ```
+     * */
+    processClass?: string;
+    /**
+     * `<script>` tags with this type will be processed as LaTeX.
+     *
+     * **Default**: `"math/tex"`
+     */
+    processScriptType?: string;
+    /**
+     * `<script>` tags with this type will be processed as MathJSON.
+     *
+     * **Default**: `"math/json"`
+     */
+    processMathJSONScriptType?: string;
+    /** The format(s) in
+     * which to render the math for screen readers:
+     * - `"mathml"` MathML
+     * - `"speakable-text"` Spoken representation
+     *
+     * You can pass an empty string to turn off the rendering of accessible content.
+     * You can pass multiple values separated by spaces, e.g `"mathml speakable-text"`
+     *
+     * **Default**: `"mathml"`
+     */
+    renderAccessibleContent?: string;
+    /**
+     * If true, generate markup that can
+     * be read aloud later using {@linkcode speak}
      *
      * **Default**: `false`
      */
-    useSharedVirtualKeyboard: boolean;
-    /**
-     * Specify the `targetOrigin` parameter for
-     * [postMessage](https://developer.mozilla.org/en/docs/Web/API/Window/postMessage)
-     * to send control messages from child to parent frame to remote control
-     * of mathfield component.
-     *
-     * **Default**: `window.origin`
-     */
-    sharedVirtualKeyboardTargetOrigin: string;
-    /**
-     * Specify behaviour how origin of message from [postMessage](https://developer.mozilla.org/en/docs/Web/API/Window/postMessage)
-     * should be validated.
-     *
-     * **Default**: `'same-origin'`
-     */
-    originValidator: OriginValidator;
-    /**
-     * An optional listener function that will be
-     * invoked when an error is encountered.
-     *
-     * This could be a Latex parsing error, for the initial value of the
-     * mathfield, a value inserted programmatically later, or through a
-     * user interaction (pasting in the mathfield for example).
-     * See [[`ParserErrorCode`]] for the list of possible parsing errors.
-     *
-     * This could also be another kind of error, such as an invalid keybinding.
-     *
-     */
-    onError: ErrorListener<ParserErrorCode | MathfieldErrorCode | MathJsonErrorCode>;
+    readAloud?: boolean;
+    asciiMath?: {
+        delimiters?: {
+            display?: [openDelim: string, closeDelim: string][];
+            inline?: [openDelim: string, closeDelim: string][];
+        };
+    };
+    TeX?: {
+        /**
+         * If true, math expression that start with `\begin{` will automatically be
+         * rendered.
+         *
+         * **Default**: true.
+         */
+        processEnvironments?: boolean;
+        /**
+         * Delimiter pairs that will trigger a render of the content in
+         * display style or inline, respectively.
+         *
+         * **Default**: `{display: [ ['$$', '$$'], ['\\[', '\\]'] ] ], inline: [ ['\\(','\\)'] ] ]}`
+         *
+         */
+        delimiters?: {
+            display: [openDelim: string, closeDelim: string][];
+            inline: [openDelim: string, closeDelim: string][];
+        };
+    };
 };
-/**
- * See [[`setKeyboardLayout`]].
- *
- *  | Name | Platform | Display name |
- *  | :----- | :----- | :----- |
- *  | `'apple.en-intl'`         |  Apple    | English (International) |
- *  | `'apple.french'`          |  Apple    | French (AZERTY) |
- *  | `'apple.german'`          |  Apple    | German (QWERTZ) |
- *  | `'dvorak'`                |           | English (Dvorak) |
- *  | `'windows.en-intl'`       |  Windows  | English (International) |
- *  | `'windows.french'`        |  Windows  | French (AZERTY) |
- *  | `'windows.german'`        |  Windows  | German (QWERTZ) |
- *  | `'linux.en'`              |  Linux    | English |
- *  | `'linux.french'`          |  Linux    | French (AZERTY) |
- *  | `'linux.german'`          |  Linux    | German (QWERTZ) |
- */
-export declare type KeyboardLayoutName = 'apple.en-intl' | 'apple.french' | 'apple.german' | 'apple.spanish' | 'dvorak' | 'windows.en-intl' | 'windows.french' | 'windows.german' | 'windows.spanish' | 'linux.en' | 'linux.french' | 'linux.german' | 'linux.spanish';
-/**
- * Change the current physical keyboard layout.
- *
- * Note that this affects some keybindings, but not general text input.
- *
- * If set to `auto` the keyboard layout is guessed.
- *
- */
-export declare function setKeyboardLayout(name: KeyboardLayoutName | 'auto'): void;
-/**
- * Change the current physical keyboard layout to a layout that matches the
- * specified locale, if one is available.
- *
- * Note that this affects some keybindings, but not general text input.
- *
- */
-export declare function setKeyboardLayoutLocale(locale: string): void;

@@ -1,6 +1,7 @@
-/* 0.69.9 */import type { Keys } from './types-utils';
+/* 0.89.4 */import type { Keys } from './types-utils';
 import type { ParseMode, Style } from './core';
 import type { InsertOptions, Mathfield, Model, VirtualKeyboardInterface } from './mathfield';
+import { VirtualKeyboardTheme } from './options';
 /**
  * How much of the formula should be spoken:
  * | | |
@@ -12,9 +13,17 @@ import type { InsertOptions, Mathfield, Model, VirtualKeyboardInterface } from '
  * | `group` | the group (numerator, root, etc..) the selection is in |
  * | `parent` | the parent of the selection |
  */
-export declare type SpeechScope = 'all' | 'selection' | 'left' | 'right' | 'group' | 'parent';
+export type SpeechScope = 'all' | 'selection' | 'left' | 'right' | 'group' | 'parent';
 /**
- * Commands return true if they resulted in a dirty state
+ * Use with [[Mathfield.executeCommand]] or [[MathfieldElement.executeCommand]].
+ *
+ * ```ts
+ * const mf = document.getElementById('mathfield');
+ * mf.executeCommand('selectAll');
+ * mf.executeCommand('copyToClipboard');
+ * ```
+ *
+ * Commands return true if they resulted in a dirty state.
  * @command executeCommand
  */
 export interface Commands {
@@ -70,8 +79,10 @@ export interface Commands {
      */
     scrollToEnd: (mathfield: Mathfield) => boolean;
     toggleKeystrokeCaption: (mathfield: Mathfield) => boolean;
+    plonk: (mathfield: Mathfield) => boolean;
     switchMode: (mathfield: Mathfield, mode: ParseMode) => boolean;
     insert: (mathfield: Mathfield, s: string, options: InsertOptions) => boolean;
+    insertDecimalSeparator: (mathfield: Mathfield) => boolean;
     typedText: (text: string, options: {
         /** If true, the mathfield will be focused */
         focus: boolean;
@@ -107,6 +118,14 @@ export interface Commands {
      * @category Array
      */
     addColumnBefore: (model: Model) => boolean;
+    /**
+     * @category Array
+     */
+    removeRow: (model: Model) => boolean;
+    /**
+     * @category Array
+     */
+    removeColumn: (model: Model) => boolean;
     /**
      * @category Deleting
      */
@@ -198,11 +217,11 @@ export interface Commands {
     /**
      * @category Selection
      */
-    moveToMathFieldStart: (model: Model) => boolean;
+    moveToMathfieldStart: (model: Model) => boolean;
     /**
      * @category Selection
      */
-    moveToMathFieldEnd: (model: Model) => boolean;
+    moveToMathfieldEnd: (model: Model) => boolean;
     /**
      * @category Selection
      */
@@ -271,7 +290,7 @@ export interface Commands {
     /**
      * @category Virtual Keyboard
      */
-    toggleVirtualKeyboard: (keyboard: VirtualKeyboardInterface, theme: 'apple' | 'material' | '') => boolean;
+    toggleVirtualKeyboard: (keyboard: VirtualKeyboardInterface, theme: VirtualKeyboardTheme) => boolean;
     /**
      * @category Virtual Keyboard
      */
@@ -279,6 +298,6 @@ export interface Commands {
     /**
      * @category Virtual Keyboard
      */
-    showVirtualKeyboard: (keyboard: VirtualKeyboardInterface, theme: 'apple' | 'material' | '') => boolean;
+    showVirtualKeyboard: (keyboard: VirtualKeyboardInterface, theme: VirtualKeyboardTheme) => boolean;
 }
-export declare type Selector = Keys<Commands>;
+export type Selector = Keys<Commands>;
