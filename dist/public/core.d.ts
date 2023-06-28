@@ -1,8 +1,8 @@
-/* 0.69.9 *//**
+/* 0.89.4 *//**
  * The mode that indicates how a portion of content is interpreted
  *
  */
-export declare type ParseMode = 'math' | 'text' | 'latex';
+export type ParseMode = 'math' | 'text' | 'latex';
 /**
  * Error code passed to the [[`ErrorListener`]] function.
  *
@@ -11,11 +11,9 @@ export declare type ParseMode = 'math' | 'text' | 'latex';
  *
     |  | |
     | ------------------ | ---      |
-    | `font-not-found`              | A required font could not be loaded. The `fontDirectory` option may not be setup correctly or the 'fonts' directory is missing. |
-    | `invalid-keybinding`          | A keybinding includes a combinatino of keys which cannot be performed with the current keyboard layout. |
-    | `unknown-command`             | There is no definition available for this command, e.g. `\zin`  |
+    | `unknown-command`             | There is no definition available for this LaTeX command, e.g. `\zin`  |
     | `unknown-environment`         | There is no definition available for this environment, e.g. `\begin{foo}`  |
-    | `invalid-command`             | This command is not valid in the current mode (e.g. text command in math mode)  |
+    | `invalid-command`             | This command is not valid in the current context (e.g. text command in math mode)  |
     | `unbalanced-braces`           |  There are too many or too few `{` or `}`  |
     | `unbalanced-environment`      |  An environment was open but never closed (`\begin{array}`) or the `\end` command does not match the `\begin` command (`\begin{array*}\end{array}`)  |
     | `unbalanced-mode-shift`       |  A `$`, `$$`, `\(` or `\[` was not balanced  |
@@ -28,15 +26,15 @@ export declare type ParseMode = 'math' | 'text' | 'latex';
     | `unexpected-end-of-string`    |  The end of the string was reached, but some required arguments were missing. |
     | `improper-alphabetic-constant`    | The alphabetic constant prefix `` ` `` was not followed by a letter or single character command. |
  */
-export declare type ParserErrorCode = 'unknown-command' | 'invalid-command' | 'unbalanced-braces' | 'unknown-environment' | 'unbalanced-environment' | 'unbalanced-mode-shift' | 'missing-argument' | 'too-many-infix-commands' | 'unexpected-command-in-string' | 'missing-unit' | 'unexpected-delimiter' | 'unexpected-token' | 'unexpected-end-of-string' | 'improper-alphabetic-constant';
-export declare type MathfieldErrorCode = 'invalid-keybinding' | 'font-not-found';
-export declare type ErrorListener<T> = (err: {
+export type ParserErrorCode = 'unknown-command' | 'invalid-command' | 'unbalanced-braces' | 'unknown-environment' | 'unbalanced-environment' | 'unbalanced-mode-shift' | 'missing-argument' | 'too-many-infix-commands' | 'unexpected-command-in-string' | 'missing-unit' | 'unexpected-delimiter' | 'unexpected-token' | 'unexpected-end-of-string' | 'improper-alphabetic-constant';
+export type LatexSyntaxError<T = ParserErrorCode> = {
     code: T;
     arg?: string;
     latex?: string;
     before?: string;
     after?: string;
-}) => void;
+};
+export type ErrorListener<T = ParserErrorCode> = (err: LatexSyntaxError<T>) => void;
 /**
  * Variants indicate a stylistic alternate for some characters.
  *
@@ -50,8 +48,8 @@ export declare type ErrorListener<T> = (err: {
  * For example, the set ℂ should not be confused with the physical unit 𝖢 (Coulomb).
  *
  * When rendered, these variants can map to some built-in fonts.
- * Latex supports a limited set of characters. However, MathLive will
- * map characters not supported by Latex  fonts(double-stuck variant for digits
+ * LaTeX supports a limited set of characters. However, MathLive will
+ * map characters not supported by LaTeX  fonts(double-stuck variant for digits
  * for example) to a Unicode character (see [Mathematical Alphanumeric Symbols on Wikipedia](https://en.wikipedia.org/wiki/Mathematical_Alphanumeric_Symbols) ).
  *
  * `normal` is a synthetic variant that maps either to `main` (roman) or
@@ -65,7 +63,7 @@ export declare type ErrorListener<T> = (err: {
  * **See Also**
  * * [[`Style`]]
  */
-export declare type Variant = 'ams' | 'double-struck' | 'calligraphic' | 'script' | 'fraktur' | 'sans-serif' | 'monospace' | 'normal' | 'main' | 'math';
+export type Variant = 'ams' | 'double-struck' | 'calligraphic' | 'script' | 'fraktur' | 'sans-serif' | 'monospace' | 'normal' | 'main' | 'math';
 /**
  * Some variants support stylistic variations.
  *
@@ -82,10 +80,10 @@ export declare type Variant = 'ams' | 'double-struck' | 'calligraphic' | 'script
     | `monospace`        | 𝙰𝙱𝙲𝚊𝚋𝚌     | n/a          | n/a      | n/a  |
 
  */
-export declare type VariantStyle = 'up' | 'bold' | 'italic' | 'bolditalic' | '';
-export declare type FontShape = 'auto' | 'n' | 'it' | 'sl' | 'sc' | '';
-export declare type FontSeries = 'auto' | 'm' | 'b' | 'l' | '';
-export declare type FontSize = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+export type VariantStyle = 'up' | 'bold' | 'italic' | 'bolditalic' | '';
+export type FontShape = 'auto' | 'n' | 'it' | 'sl' | 'sc' | '';
+export type FontSeries = 'auto' | 'm' | 'b' | 'l' | '';
+export type FontSize = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 /**
  * Use a `Style` object  literal to modify the visual appearance of a
  * mathfield or a portion of a mathfield.
@@ -114,13 +112,14 @@ export interface Style {
  * * [Macros](/mathlive/guides/macros/)
  *
  */
-export declare type MacroDefinition = {
+export type MacroDefinition = {
+    /** Definition of the macro as a LaTeX expression */
     def: string;
     args?: number;
     expand?: boolean;
     captureSelection?: boolean;
 };
-export declare type MacroPackageDefinition = {
+export type MacroPackageDefinition = {
     package: Record<string, string | MacroDefinition>;
     expand?: boolean;
     captureSelection?: boolean;
@@ -129,7 +128,7 @@ export declare type MacroPackageDefinition = {
  * Glue represents flexible spacing, that is a dimension that
  * can grow (by the `grow` property) or shrink (by the `shrink` property).
  */
-export declare type Glue = {
+export type Glue = {
     glue: Dimension;
     shrink?: Dimension;
     grow?: Dimension;
@@ -137,16 +136,16 @@ export declare type Glue = {
 /**
  *
  */
-export declare type DimensionUnit = 'pt' | 'mm' | 'cm' | 'ex' | 'px' | 'em' | 'bp' | 'dd' | 'pc' | 'in' | 'mu' | 'fil' | 'fill' | 'filll';
+export type DimensionUnit = 'pt' | 'mm' | 'cm' | 'ex' | 'px' | 'em' | 'bp' | 'dd' | 'pc' | 'in' | 'mu' | 'fil' | 'fill' | 'filll';
 /**
  * A dimension is used to specify the size of things
  *
  */
-export declare type Dimension = {
+export type Dimension = {
     dimension: number;
     unit?: DimensionUnit;
 };
-export declare type RegisterValue = Dimension | Glue | number | string;
+export type RegisterValue = Dimension | Glue | number | string;
 /**
  * TeX registers represent 'variables' and 'constants'.
  *
@@ -162,7 +161,7 @@ export declare type RegisterValue = Dimension | Glue | number | string;
  * - `delimitershortfall`
  * - `jot`
  */
-export declare type Registers = Record<string, RegisterValue>;
+export type Registers = Record<string, RegisterValue>;
 /**
  * A dictionary of LaTeX macros to be used to interpret and render the content.
  *
@@ -181,4 +180,4 @@ The code above will support the following notation:
  * **See Also**
  * * [Macros Example](/mathlive/guides/macros/)
  */
-export declare type MacroDictionary = Record<string, string | MacroDefinition | MacroPackageDefinition>;
+export type MacroDictionary = Record<string, string | Partial<MacroDefinition> | MacroPackageDefinition>;

@@ -1,45 +1,10 @@
-/* 0.69.9 */import { MathfieldOptions } from './options';
-import { Selector } from './commands';
-import { Mathfield, InsertOptions, OutputFormat, Offset, Range, Selection, FindOptions, ReplacementFunction } from './mathfield';
-import { MathfieldErrorCode, ParseMode, ParserErrorCode, Style } from './core';
-/**
- * The `math-error` custom event signals an error while parsing an expression.
- *
- * ```javascript
- * document.getElementById('mf').addEventListener('math-error', (ev) => {
- *  const err = ev.detail;
- *  console.warn(err.code + (err.arg ? ': ' + err.arg : '') +
- *         '\n%c|  ' + err.before + '%c' + err.after +
- *         '\n%c|  ' + String(' ').repeat(err.before.length) +
- *         '▲',
- *         'font-weight: bold',
- *         'font-weight: normal; color: rgba(160, 160, 160)',
- *         'font-weight: bold; color: hsl(4deg, 90%, 50%)'
- *     );
- * });
- * ```
- */
-export declare type MathErrorEvent = {
-    code: ParserErrorCode | MathfieldErrorCode;
-    arg?: string;
-    latex?: string;
-    before?: string;
-    after?: string;
-};
-/**
- * The `keystroke` event is fired when a keystroke is about to be procesed.
- * The event is cancellable, which wills suprress further handling of the event.
- *
- */
-export declare type KeystrokeEvent = {
-    /** A string descring the keystroke, for example `"Alt-KeyU". See [W3C UIEvents](https://www.w3.org/TR/uievents/#keys-keyvalues)
-     * for more information on the format of the descriptor.
-     *
-     */
-    keystroke: string;
-    /** The native keyboard event */
-    event?: KeyboardEvent;
-};
+/* 0.89.4 */import { Selector } from './commands';
+import { LatexSyntaxError, ParseMode, Style } from './core';
+import { Mathfield, InsertOptions, OutputFormat, Offset, Range, Selection } from './mathfield';
+import { MathfieldOptions } from './options';
+export declare type Expression = number | string | {
+    [key: string]: any;
+} | [Expression, ...Expression[]];
 /**
  * The `focus-out` event signals that the mathfield has lost focus through keyboard
  * navigation with the **tab** key.
@@ -63,7 +28,7 @@ export declare type KeystrokeEvent = {
  * });
  * ```
  */
-export declare type FocusOutEvent = {
+export type FocusOutEvent = {
     direction: 'forward' | 'backward';
 };
 /**
@@ -77,9 +42,20 @@ export declare type FocusOutEvent = {
  * event handler), the default behavior is to play a "plonk" sound.
  *
  */
-export declare type MoveOutEvent = {
+export type MoveOutEvent = {
     direction: 'forward' | 'backward' | 'upward' | 'downward';
 };
+/**  The `placeholder-change` event signals that an editable placeholder inside
+ * a read-only mathfield has been modified. The `placeholderId` property
+ * indicates which placeholder was changed.
+ */
+export type PlaceholderChange = {
+    placeholderId: string;
+};
+/**
+ * See documentation for the `virtual-keyboard-mode` option.
+ */
+export type VirtualKeyboardMode = 'auto' | 'manual' | 'onfocus' | 'off';
 declare global {
     /**
      * Map the custom event names to types
@@ -87,15 +63,15 @@ declare global {
      */
     interface HTMLElementEventMap {
         'focus-out': CustomEvent<FocusOutEvent>;
-        'keystroke': CustomEvent<KeystrokeEvent>;
-        'math-error': CustomEvent<MathErrorEvent>;
         'mode-change': Event;
         'mount': Event;
         'move-out': CustomEvent<MoveOutEvent>;
+        'placeholder-change': CustomEvent<PlaceholderChange>;
         'unmount': Event;
         'read-aloud-status-change': Event;
         'selection-change': Event;
         'undo-state-change': Event;
+        'before-virtual-keyboard-toggle': Event;
         'virtual-keyboard-toggle': Event;
     }
 }
@@ -139,13 +115,13 @@ export interface MathfieldElementAttributes {
      * shortcuts.
      */
     'inline-shortcut-timeout': string;
-    'keypress-vibration': boolean;
+    'keypress-vibration': string;
     /**
      * When a key on the virtual keyboard is pressed, produce a short audio
      * feedback.
      *
      * The value of the properties should a string, the name of an audio file in
-     * the `soundsDirectory` directory or 'none' to supress the sound.
+     * the `soundsDirectory` directory or 'none' to suppress the sound.
      */
     'keypress-sound': string;
     /**
@@ -169,15 +145,15 @@ export interface MathfieldElementAttributes {
     'read-only': boolean;
     'remove-extraneous-parentheses': boolean;
     /**
-     * When `true` and an open fence is entered via `typedText()` it will
+     * When `on` and an open fence is entered via `typedText()` it will
      * generate a contextually appropriate markup, for example using
      * `\left...\right` if applicable.
      *
-     * When `false`, the literal value of the character will be inserted instead.
+     * When `off`, the literal value of the character will be inserted instead.
      */
-    'smart-fence': boolean;
+    'smart-fence': string;
     /**
-     * When true, during text input the field will switch automatically between
+     * When `on`, during text input the field will switch automatically between
      * 'math' and 'text' mode depending on what is typed and the context of the
      * formula. If necessary, what was previously typed will be 'fixed' to
      * account for the new info.
@@ -192,7 +168,7 @@ export interface MathfieldElementAttributes {
      * | "if x >" | "if" stays in text mode, but now "x >" is in math mode |
      * | "if x > 0" | "if" in text mode, "x > 0" in math mode |
      *
-     * Smart Mode is off by default.
+     * Smart Mode is `off` by default.
      *
      * Manually switching mode (by typing `alt/option+=`) will temporarily turn
      * off smart mode.
@@ -212,20 +188,20 @@ export interface MathfieldElementAttributes {
      * -   For all n in NN
      *
      */
-    'smart-mode': boolean;
+    'smart-mode': string;
     /**
-     * When `true`, when a digit is entered in an empty superscript, the cursor
+     * When `on`, when a digit is entered in an empty superscript, the cursor
      * leaps automatically out of the superscript. This makes entry of common
      * polynomials easier and faster. If entering other characters (for example
      * "n+1") the navigation out of the superscript must be done manually (by
      * using the cursor keys or the spacebar to leap to the next insertion
      * point).
      *
-     * When `false`, the navigation out of the superscript must always be done
+     * When `off`, the navigation out of the superscript must always be done
      * manually.
      *
      */
-    'smart-superscript': boolean;
+    'smart-superscript': string;
     'speech-engine': string;
     'speech-engine-rate': string;
     'speech-engine-voice': string;
@@ -233,20 +209,20 @@ export interface MathfieldElementAttributes {
     'text-to-speech-rules': string;
     'virtual-keyboard-layout': string;
     /**
-     * -   `'manual'`: pressing the virtual keyboard toggle button will show or hide
+     * -   `"manual"`: pressing the virtual keyboard toggle button will show or hide
      *     the virtual keyboard. If hidden, the virtual keyboard is not shown when
      *     the field is focused until the toggle button is pressed.
-     * -   `'onfocus'`: the virtual keyboard will be displayed whenever the field is
+     * -   `"onfocus"`: the virtual keyboard will be displayed whenever the field is
      *     focused and hidden when the field loses focus. In that case, the virtual
      *     keyboard toggle button is not displayed.
-     * -   `'off'`: the virtual keyboard toggle button is not displayed, and the
+     * -   `"off"`: the virtual keyboard toggle button is not displayed, and the
      *     virtual keyboard is never triggered.
      *
-     * If the setting is empty, it will default to `'onfocus'` on touch-capable
-     * devices and to `'off'` otherwise.
+     * If the setting is `"auto"`, it will default to `"onfocus"` on touch-capable
+     * devices and to `"off"` otherwise.
      *
      */
-    'virtual-keyboard-mode': 'auto' | 'manual' | 'onfocus' | 'off';
+    'virtual-keyboard-mode': VirtualKeyboardMode;
     /**
      * The visual theme used for the virtual keyboard.
      *
@@ -257,15 +233,15 @@ export interface MathfieldElementAttributes {
     'virtual-keyboard-theme': string;
     /**
      * A space separated list of the keyboards that should be available. The
-     * keyboard `'all'` is synonym with `'numeric'`, `'functions'``, `'symbols'``
-     * `'roman'` and `'greek'`,
+     * keyboard `"all"` is synonym with `"numeric"`, `"functions"``, `"symbols"``
+     * `"roman"` and `"greek"`,
      *
      * The keyboards will be displayed in the order indicated.
      */
     'virtual-keyboards': 'all' | 'numeric' | 'roman' | 'greek' | 'functions' | 'symbols' | 'latex' | string;
     /**
-     * When true, use a shared virtual keyboard for all the mathfield
-     * elements in the page, even across iframes.
+     * When `true`, use a shared virtual keyboard for all the mathfield
+     * elements in the page, even across _iframes_.
      *
      * When setting this option to true, you must create the shared
      * virtual keyboard in the the parent document:
@@ -277,6 +253,10 @@ export interface MathfieldElementAttributes {
      *         virtualKeyboardToolbar: 'none',
      *     });
      * ```
+     * You should call `makeSharedVirtualKeyboard()` as early as possible.
+     * `makeSharedVirtualKeyboard()` only applies to mathfield instances created
+     *  after it is called.
+     *
      *
      * **Default**: `false`
      */
@@ -287,11 +267,11 @@ export interface MathfieldElementAttributes {
      * to send control messages from child to parent frame to remote control
      * of mathfield component.
      *
-     * **Default**: `window.origin`
+     * **Default**: `globalThis.origin`
      */
     'shared-virtual-keyboard-target-origin': string;
     /**
-     * The Latex string to insert when the spacebar is pressed (on the physical or
+     * The LaTeX string to insert when the spacebar is pressed (on the physical or
      * virtual keyboard). Empty by default. Use `\;` for a thick space, `\:` for
      * a medium space, `\,` for a thin space.
      */
@@ -320,33 +300,45 @@ export interface MathfieldElementAttributes {
  *
  * ```javascript
  * // Setting options during construction
- * const mfe = new MathfieldElement({smartFence: false});
+ * const mfe = new MathfieldElement({ smartFence: false });
  * // Modifying options after construction
- * mfe.setOptions({smartFence: true});
+ * mfe.setOptions({ smartFence: true });
  * ```
  *
  * ### CSS Variables
  *
  * To customize the appearance of the mathfield, declare the following CSS
- * variables (custom properties) in a ruleset that applied to the mathfield.
+ * variables (custom properties) in a ruleset that applies to the mathfield.
+ *
  * ```css
  * math-field {
  *  --hue: 10       // Set the highlight color and caret to a reddish hue
  * }
  * ```
  *
+ * Alternatively you can set these CSS variables programatically:
+ *
+ * ```js
+ *   document.body.style.setProperty("--hue", "10");
+ * ```
+ * <div class='symbols-table' style='--first-col-width:25ex'>
+ *
  * | CSS Variable | Usage |
  * |:---|:---|
  * | `--hue` | Hue of the highlight color and the caret |
- * | `--highlight` | Color of the selection |
- * | `--contains-highlight` | Backround property for items that contain the caret |
- * | `--highlight-inactive` | Color of the selection, when the mathfield is not focused |
- * | `--caret` | Color of the caret/insertion point |
- * | `--primary` | Primary accent color, used for example in the virtual keyboard |
+ * | `--contains-highlight-background-color` | Backround property for items that contain the caret |
+ * | `--primary-color` | Primary accent color, used for example in the virtual keyboard |
  * | `--text-font-family` | The font stack used in text mode |
- * | `--keyboard-zindex` | The z-index attribute of the virtual keyboard panel |
- * | `--smart-fence-opacity` | Opacity of a smart gence (default is 50%) |
+ * | `--smart-fence-opacity` | Opacity of a smart fence (default is 50%) |
  * | `--smart-fence-color` | Color of a smart fence (default is current color) |
+ *
+ * </div>
+ *
+ * You can customize the appearance and zindex of the virtual keyboard panel
+ * with some CSS variables associated with a selector that applies to the
+ * virtual keyboard panel container.
+ *
+ * Read more about [customizing the virtual keyboard appearance](https://cortexjs.io/mathlive/guides/virtual-keyboards/#custom-appearance)
  *
  * ### CSS Parts
  *
@@ -368,12 +360,13 @@ export interface MathfieldElementAttributes {
  * <math-field locale="fr"></math-field>
  * ```
  *
- * The supported attributes are listed in the table below with their correspnding
- * property.
+ * The supported attributes are listed in the table below with their
+ * corresponding property.
  *
  * The property can be changed either directly on the
  * `MathfieldElement` object, or using `setOptions()` if it is prefixed with
- * `options.`, for example
+ * `options.`, for example:
+ *
  * ```javascript
  *  getElementById('mf').value = '\\sin x';
  *  getElementById('mf').setOptions({horizontalSpacingScale: 1.1});
@@ -381,6 +374,7 @@ export interface MathfieldElementAttributes {
  *
  * The values of attributes and properties are reflected, which means you can change one or the
  * other, for example:
+ *
  * ```javascript
  * getElementById('mf').setAttribute('virtual-keyboard-mode',  'manual');
  * console.log(getElementById('mf').getOption('virtualKeyboardMode'));
@@ -393,6 +387,8 @@ export interface MathfieldElementAttributes {
  * An exception is the `value` property, which is not reflected on the `value`
  * attribute: the `value` attribute remains at its initial value.
  *
+ *
+ * <div class='symbols-table' style='--first-col-width:32ex'>
  *
  * | Attribute | Property |
  * |:---|:---|
@@ -418,11 +414,13 @@ export interface MathfieldElementAttributes {
  * | `speech-engine-voice` | `options.speechEngineVoice` |
  * | `text-to-speech-markup` | `options.textToSpeechMarkup` |
  * | `text-to-speech-rules` | `options.textToSpeechRules` |
- * | `value` | value |
- * | `virtual-keyboard-layout` | `options.keyboardLayout` |
- * | `virtual-keyboard-mode` | `options.keyboardMode` |
- * | `virtual-keyboard-theme` | `options.keyboardTheme` |
- * | `virtual-keyboards` | `options.keyboards` |
+ * | `value` | `value` |
+ * | `virtual-keyboard-layout` | `options.virtualKeyboardLayout` |
+ * | `virtual-keyboard-mode` | `options.virtualKeyboardMode` |
+ * | `virtual-keyboard-theme` | `options.virtualKeyboardTheme` |
+ * | `virtual-keyboards` | `options.virtualKeyboards` |
+ *
+ * </div>
  *
  * See [[`MathfieldOptions`]] for more details about these options.
  *
@@ -440,17 +438,20 @@ export interface MathfieldElementAttributes {
  * ### Events
  *
  * Listen to these events by using `addEventListener()`. For events with additional
- * arguments, the arguments are availble in `event.detail`.
+ * arguments, the arguments are available in `event.detail`.
+ *
+ * <div class='symbols-table' style='--first-col-width:27ex'>
  *
  * | Event Name  | Description |
  * |:---|:---|
  * | `input` | The value of the mathfield has been modified. This happens on almost every keystroke in the mathfield.  |
- * | `change` | The user has commited the value of the mathfield. This happens when the user presses **Return** or leaves the mathfield. |
+ * | `change` | The user has committed the value of the mathfield. This happens when the user presses **Return** or leaves the mathfield. |
  * | `selection-change` | The selection (or caret position) in the mathfield has changed |
  * | `mode-change` | The mode (`math`, `text`) of the mathfield has changed |
  * | `undo-state-change` |  The state of the undo stack has changed |
  * | `read-aloud-status-change` | The status of a read aloud operation has changed |
- * | `virtual-keyboard-toggle` | The visibility of the virtual keyboard panel has changed |
+ * | `before-virtual-keyboard-toggle` | The visibility of the virtual keyboard panel is about to change.  |
+ * | `virtual-keyboard-toggle` | The visibility of the virtual keyboard panel has changed. When using `makeSharedVirtualKeyboard()`, listen for this even on the object returned by `makeSharedVirtualKeyboard()` |
  * | `blur` | The mathfield is losing focus |
  * | `focus` | The mathfield is gaining focus |
  * | `focus-out` | The user is navigating out of the mathfield, typically using the **tab** key<br> `detail: {direction: 'forward' | 'backward' | 'upward' | 'downward'}` **cancellable**|
@@ -460,24 +461,35 @@ export interface MathfieldElementAttributes {
  * | `mount` | The element has been attached to the DOM |
  * | `unmount` | The element is about to be removed from the DOM |
  *
+ * </div>
+ *
+ * @keywords zindex, events, attribute, attributes, property, properties, parts, variables, css, mathfield, mathfieldelement
+
  */
 export declare class MathfieldElement extends HTMLElement implements Mathfield {
+    static get formAssociated(): boolean;
     /**
      * Private lifecycle hooks
      * @internal
      */
-    static get optionsAttributes(): Record<string, 'number' | 'boolean' | 'string'>;
+    static get optionsAttributes(): Record<string, 'number' | 'boolean' | 'string' | 'on/off'>;
     /**
      * Custom elements lifecycle hooks
      * @internal
      */
     static get observedAttributes(): string[];
+    /** @internal */
     private _mathfield;
+    /** @internal */
     private _slotValue;
+    /** @internal */
+    private _internals;
+    /** @internal */
     private _style;
     /**
-       * To create programmatically a new mahfield use:
-       * ```javascript
+       * To create programmatically a new mathfield use:
+       *
+       ```javascript
       let mfe = new MathfieldElement();
   
       // Set initial value and options
@@ -493,14 +505,43 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
   
       // Attach the element to the DOM
       document.body.appendChild(mfe);
-      * ```
+      ```
       */
     constructor(options?: Partial<MathfieldOptions>);
-    getPlaceholderField(placeholderId: string): Mathfield | undefined;
+    onPointerDown(): void;
+    getPromptContent(placeholderId: string): string;
+    get prompts(): string[];
     addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: MathfieldElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: MathfieldElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+    get form(): HTMLFormElement | null;
+    get name(): string;
+    get type(): string;
     get mode(): ParseMode;
     set mode(value: ParseMode);
+    /**
+     * If the Compute Engine library is available, return the
+     * compute engine associated with this mathfield.
+     *
+     * To load the Compute Engine library, use:
+     * ```js
+  import 'https://unpkg.com/@cortex-js/compute-engine?module';
+  ```
+     *
+     */
+    get computeEngine(): any;
+    set computeEngine(val: any | null);
+    /**
+     * If the Compute Engine library is available, return a boxed MathJSON expression representing the value of the mathfield.
+     *
+     * To load the Compute Engine library, use:
+     * ```js
+  import 'https://unpkg.com/@cortex-js/compute-engine?module';
+  ```
+     *
+     */
+    get expression(): any | null;
+    set expression(mathJson: Expression | any);
+    get errors(): LatexSyntaxError[];
     /**
      *  @category Options
      */
@@ -515,38 +556,24 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
      */
     setOptions(options: Partial<MathfieldOptions>): void;
     /**
-     * Execute a [[`Commands`|command]] defined by a selector.
-     * ```javascript
-     * mfe.executeCommand('add-column-after');
-     * mfe.executeCommand(['switch-mode', 'math']);
-     * ```
-     *
-     * @param command - A selector, or an array whose first element
-     * is a selector, and whose subsequent elements are arguments to the selector.
-     *
-     * Selectors can be passed either in camelCase or kebab-case.
-     *
-     * ```javascript
-     * // Both calls do the same thing
-     * mfe.executeCommand('selectAll');
-     * mfe.executeCommand('select-all');
-     * ```
+     * @inheritdoc Mathfield.executeCommand
      */
     executeCommand(command: Selector | [Selector, ...any[]]): boolean;
     /**
-     *  @category Accessing and changing the content
+     * @inheritdoc Mathfield.getValue
+     * @category Accessing and changing the content
      */
     getValue(format?: OutputFormat): string;
     getValue(start: Offset, end: Offset, format?: OutputFormat): string;
     getValue(range: Range, format?: OutputFormat): string;
     getValue(selection: Selection, format?: OutputFormat): string;
     /**
-     *  @category Accessing and changing the content
+     * @inheritdoc Mathfield.setValue
+     * @category Accessing and changing the content
      */
     setValue(value?: string, options?: InsertOptions): void;
     /**
-     * Return true if the mathfield is currently focused (responds to keyboard
-     * input).
+     * @inheritdoc Mathfield.hasFocus
      *
      * @category Focus
      *
@@ -575,36 +602,13 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
      */
     select(): void;
     /**
-     * Inserts a block of text at the current insertion point.
-     *
-     * This method can be called explicitly or invoked as a selector with
-     * `executeCommand("insert")`.
-     *
-     * After the insertion, the selection will be set according to the
-     * `options.selectionMode`.
-     *
+     * @inheritdoc Mathfield.insert
+  
      *  @category Accessing and changing the content
      */
     insert(s: string, options?: InsertOptions): boolean;
     /**
-     * Updates the style (color, bold, italic, etc...) of the selection or sets
-     * the style to be applied to future input.
-     *
-     * If there is no selection and no range is specified, the style will
-     * apply to the next character typed.
-     *
-     * If a range is specified, the style is applied to the range, otherwise,
-     * if there is a selection, the style is applied to the selection.
-     *
-     * If the operation is 'toggle' and the range already has this style,
-     * remove it. If the range
-     * has the style partially applied (i.e. only some sections), remove it from
-     * those sections, and apply it to the entire range.
-     *
-     * If the operation is 'set', the style is applied to the range,
-     * whether it already has the style or not.
-     *
-     * The default operation is 'set'.
+     * @inheritdoc Mathfield.applyStyle
      *
      * @category Accessing and changing the content
      */
@@ -616,7 +620,6 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
      * The bottom location of the caret (insertion point) in viewport
      * coordinates.
      *
-     * See also [[`setCaretPoint`]]
      * @category Selection
      */
     get caretPoint(): null | {
@@ -636,22 +639,38 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
      * @category Selection
      */
     setCaretPoint(x: number, y: number): boolean;
-    /**
-     *  Return an array of ranges matching the argument.
+    /** The offset closest to the location `(x, y)` in viewport coordinate.
      *
-     * An array is always returned, but it has no element if there are no
-     * matching items.
-     */
-    find(pattern: string | RegExp, options?: FindOptions): Range[];
-    /**
-     * Replace the pattern items matching the **pattern** with the
-     * **replacement** value.
+     * **`bias`**:  if `0`, the vertical midline is considered to the left or
+     * right sibling. If `-1`, the left sibling is favored, if `+1`, the right
+     * sibling is favored.
      *
-     * If **replacement** is a function, the function is called
-     * for each match and the function return value will be
-     * used as the replacement.
+     * @category Selection
      */
-    replace(pattern: string | RegExp, replacement: string | ReplacementFunction, options?: FindOptions): void;
+    offsetFromPoint(x: number, y: number, options?: {
+        bias?: -1 | 0 | 1;
+    }): Offset;
+    /** The bounding rect of the atom at offset
+     *
+     * @category Selection
+     *
+     */
+    hitboxFromOffset(offset: number): DOMRect | null;
+    /**
+     * Reset the undo stack
+     * (for parent components with their own undo/redo)
+     */
+    resetUndo(): void;
+    /**
+     * Return whether there are undoable items
+     * (for parent components with their own undo/redo)
+     */
+    canUndo(): boolean;
+    /**
+     * Return whether there are redoable items
+     * (for parent components with their own undo/redo)
+     */
+    canRedo(): boolean;
     /**
      * Custom elements lifecycle hooks
      * @internal
@@ -677,8 +696,8 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
     get disabled(): boolean;
     set disabled(value: boolean);
     /**
-     * The content of the mathfield as a Latex expression.
-     * ```
+     * The content of the mathfield as a LaTeX expression.
+     * ```js
      * document.querySelector('mf').value = '\\frac{1}{\\pi}'
      * ```
      *  @category Accessing and changing the content
@@ -690,28 +709,28 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
     set value(value: string);
     get defaultMode(): 'inline-math' | 'math' | 'text';
     set defaultMode(value: 'inline-math' | 'math' | 'text');
-    get fontsDirectory(): string;
-    set fontsDirectory(value: string);
+    get fontsDirectory(): string | null;
+    set fontsDirectory(value: string | null);
     get mathModeSpace(): string;
     set mathModeSpace(value: string);
     get inlineShortcutTimeout(): number;
     set inlineShortcutTimeout(value: number);
     get keypressVibration(): boolean;
     set keypressVibration(value: boolean);
-    get keypressSound(): string | HTMLAudioElement | null | {
-        spacebar?: null | string | HTMLAudioElement;
-        return?: null | string | HTMLAudioElement;
-        delete?: null | string | HTMLAudioElement;
-        default: null | string | HTMLAudioElement;
+    get keypressSound(): string | null | {
+        spacebar?: null | string;
+        return?: null | string;
+        delete?: null | string;
+        default: null | string;
     };
-    set keypressSound(value: string | HTMLAudioElement | null | {
-        spacebar?: null | string | HTMLAudioElement;
-        return?: null | string | HTMLAudioElement;
-        delete?: null | string | HTMLAudioElement;
-        default: null | string | HTMLAudioElement;
+    set keypressSound(value: string | null | {
+        spacebar?: null | string;
+        return?: null | string;
+        delete?: null | string;
+        default: null | string;
     });
-    get plonkSound(): string | HTMLAudioElement | null;
-    set plonkSound(value: string | HTMLAudioElement | null);
+    get plonkSound(): string | null;
+    set plonkSound(value: string | null);
     get letterShapeStyle(): 'auto' | 'tex' | 'iso' | 'french' | 'upright';
     set letterShapeStyle(value: 'auto' | 'tex' | 'iso' | 'french' | 'upright');
     get locale(): string;
@@ -724,6 +743,9 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
     set smartFence(value: boolean);
     get smartMode(): boolean;
     set smartMode(value: boolean);
+    setPromptCorrectness(id: string, correctness: 'correct' | 'incorrect' | undefined): void;
+    setPromptContent(id: string, content: string): void;
+    setPromptLocked(id: string, locked: boolean): void;
     get smartSuperscript(): boolean;
     set smartSuperscript(value: boolean);
     get speechEngine(): 'local' | 'amazon';
@@ -738,8 +760,8 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
     set textToSpeechRule(value: 'mathlive' | 'sre');
     get virtualKeyboardLayout(): 'auto' | 'qwerty' | 'azerty' | 'qwertz' | 'dvorak' | 'colemak';
     set virtualKeyboardLayout(value: 'auto' | 'qwerty' | 'azerty' | 'qwertz' | 'dvorak' | 'colemak');
-    get virtualKeyboardMode(): 'auto' | 'manual' | 'onfocus' | 'off';
-    set virtualKeyboardMode(value: 'auto' | 'manual' | 'onfocus' | 'off');
+    get virtualKeyboardMode(): VirtualKeyboardMode;
+    set virtualKeyboardMode(value: VirtualKeyboardMode);
     get virtualKeyboardTheme(): 'material' | 'apple' | '';
     set virtualKeyboardTheme(value: 'material' | 'apple' | '');
     get virtualKeyboards(): string;
@@ -762,7 +784,8 @@ export declare class MathfieldElement extends HTMLElement implements Mathfield {
      *
      * @category Selection
      */
-    set selection(value: Selection | Offset);
+    set selection(sel: Selection | Offset);
+    get selectionIsCollapsed(): boolean;
     /**
      * The position of the caret/insertion point, from 0 to `lastOffset`.
      *
